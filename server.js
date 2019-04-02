@@ -13,7 +13,7 @@ var request = require("request");
 
 var Note = require("./models/Note");
 var Article = require("./models/Article");
-var databaseUrl = 'mongodb://localhost/scrap';
+var databaseUrl = 'mongodb://localhost/scrape';
 
 if (process.env.MONGODB_URI) {
     mongoose.connect(process.env.MONGODB_URI);
@@ -53,7 +53,7 @@ app.listen(port, function () {
 app.get("/", function (req, res) {
     Article.find({}, null, { sort: { created: -1 } }, function (err, data) {
         if (data.length === 0) {
-            res.render("placeholder", { message: "There's nothing scraped yet. Please click \"Scrape For Newest Articles\" for fresh and delicious news." });
+            res.render("placeholder", { message: "There's nothing scraped yet. Please click \"Scrape For Newest Articles\" for fresh news." });
         }
         else {
             res.render("index", { articles: data });
@@ -65,11 +65,12 @@ app.get("/scrape", function (req, res) {
     request("https://www.nytimes.com/section/us", function (error, response, html) {
         var $ = cheerio.load(html);
         var result = {};
-        $("div.story-body").each(function (i, element) {
-            var link = $(element).find("a").attr("href");
-            var title = $(element).find("h2.headline").text().trim();
-            var summary = $(element).find("p.summary").text().trim();
-            var img = $(element).parent().find("figure.media").find("img").attr("src");
+        $("article").each(function (i, element) {
+            var link = $(element).find("div h2.css-l2vidh a").attr("href");
+            var title = $(element).find("div h2.css-l2vidh a").text().trim();
+            var summary = $(element).find("div p.css-1gh531").text().trim();
+            var img = $(element).parent().find("figure.photo").find("img").attr("src");
+            if (!link) return;
             result.link = link;
             result.title = title;
             if (summary) {
@@ -98,7 +99,7 @@ app.get("/scrape", function (req, res) {
 app.get("/saved", function (req, res) {
     Article.find({ issaved: true }, null, { sort: { created: -1 } }, function (err, data) {
         if (data.length === 0) {
-            res.render("placeholder", { message: "You have not saved any articles yet. Try to save some delicious news by simply clicking \"Save Article\"!" });
+            res.render("placeholder", { message: "You have not saved any articles yet. Try to save some fresh news by simply clicking \"Save Article\"!" });
         }
         else {
             res.render("saved", { saved: data });
